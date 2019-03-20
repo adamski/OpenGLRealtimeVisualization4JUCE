@@ -194,6 +194,7 @@ namespace ntlab
         juce::var cn (channelNames);
         sink->applySettingToTarget (*this, settingNumChannels, ns);
         sink->applySettingToTarget (*this, settingChannelNames, cn);
+
     }
 
     void OscilloscopeDataCollector::updateGUITriggering()

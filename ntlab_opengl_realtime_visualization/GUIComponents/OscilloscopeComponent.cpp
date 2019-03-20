@@ -41,21 +41,21 @@ namespace ntlab
         valueTree.setProperty (parameterTimeViewed,       0.01,  undoManager);
         valueTree.setProperty (parameterEnableTriggering, false, undoManager);
 
-        setBackgroundColour (juce::Colours::darkturquoise, false);
+        setBackgroundColour (juce::Colours::transparentBlack, false);
 
         automaticLineColours = [] (int numChannels)
         {
             juce::Array<juce::Colour> onlyGreen;
             for (int i = 0; i < numChannels; ++i)
-                onlyGreen.add (juce::Colours::azure);
+                onlyGreen.add (juce::Colours::orange);
 
             return onlyGreen;
         };
 
-        setGridProperties (10, 8, juce::Colours::darkgrey);
-        enableXAxisTicks (true, "sec");
-        enableLegend (true, ntlab::Plot2D::bottomRight, false, 0.0f);
-        setLineWidthIfPossibleForGPU (1.5);
+        //setGridProperties (10, 8, juce::Colours::darkgrey);
+        //enableXAxisTicks (true, "sec");
+        //enableLegend (true, ntlab::Plot2D::bottomRight, false, 0.0f);
+        setLineWidthIfPossibleForGPU (2.5);
     }
 
     OscilloscopeComponent::~OscilloscopeComponent ()

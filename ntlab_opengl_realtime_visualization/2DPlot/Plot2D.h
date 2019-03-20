@@ -240,6 +240,7 @@ namespace ntlab
         std::unique_ptr<LineShader2D> lineShader;
         GLuint                        gridLineGLBuffer;
         bool                          shouldRenderGrid = false;
+        bool                          showGrid = false;
 
         // Arrays containing information for each line
         juce::Array<GLuint>          lineGLBuffers; // the buffer location to use on the GPU side

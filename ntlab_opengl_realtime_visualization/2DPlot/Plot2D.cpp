@@ -282,7 +282,7 @@ namespace ntlab
     void Plot2D::newOpenGLContextCreated ()
     {
         lineShader.reset (LineShader2D::create (openGLContext));
-        openGLContext.extensions.glGenBuffers (1, &gridLineGLBuffer);
+        //openGLContext.extensions.glGenBuffers (1, &gridLineGLBuffer);
     }
 
     void Plot2D::setGridProperties (int newNumXGridLines, int newNumYGridLines, bool applyGridColourContrastingBackground)
@@ -330,24 +330,26 @@ namespace ntlab
             currentY += ySpacing;
         }
 
-
+        
+        
         auto fillGridLineGLBuffer = [this, lineBuffer = std::move (lineBuffer), newNumXGridLines, newNumYGridLines] (juce::OpenGLContext &openGLContext)
         {
             // update of the member variables should happen here to avoid draw calls with a wrong number of lines before
             // the buffer was updated
             numXGridLines = newNumXGridLines;
             numYGridLines = newNumYGridLines;
-
+            
             openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, gridLineGLBuffer);
             openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER,
                                                    static_cast<GLsizeiptr> (2 * (numXGridLines + numYGridLines) * sizeof (juce::Point<float>)),
                                                    lineBuffer.data(),
                                                    GL_STATIC_DRAW);
-
+            
             shouldRenderGrid = true;
         };
-
+        
         SharedOpenGLContext::getInstance()->executeOnGLThread (fillGridLineGLBuffer);
+        
     }
 
     int Plot2D::getNumXGridLines ()
