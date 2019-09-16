@@ -29,13 +29,13 @@ namespace ntlab
 {
 
     Plot2D::Plot2D (bool updateAtFramerate, WindowOpenGLContext& glContext)
-            :   windowOpenGLContext (glContext), openGLContext (windowOpenGLContext.openGLContext)
+            :   windowOpenGLContext (glContext)
     {
         setup (updateAtFramerate);
     }
 
     Plot2D::Plot2D (bool updateAtFramerate, WindowOpenGLContext& glContext, juce::Range<float> xValueRange, float xValueDelta, LogScaling xValueScaling)
-            :   windowOpenGLContext (glContext), openGLContext (windowOpenGLContext.openGLContext)
+            :   windowOpenGLContext (glContext)
     {
         setup (updateAtFramerate);
         setXValues (xValueRange, xValueDelta, xValueScaling);
@@ -43,7 +43,7 @@ namespace ntlab
 
     Plot2D::~Plot2D()
     {
-        windowOpenGLContext.removeRenderingTarget (this);
+        windowOpenGLContext->get().removeRenderingTarget (this);
     }
 
     void Plot2D::setLines (int numLines, juce::StringArray &legend, juce::Array<juce::Colour> lineColours)
@@ -57,7 +57,7 @@ namespace ntlab
             lineGLBuffers.clear();
         };
 
-        windowOpenGLContext.executeOnGLThread (deleteAllGLBuffers);
+        windowOpenGLContext->get().executeOnGLThread (deleteAllGLBuffers);
 
         // if no updates at framerate are chosen, all GL Buffers should be filled with 0 for y. To achieve this,
         // the tempRenderDataBuffer is prepared on the render thread right before adding the new static draw buffers
@@ -68,7 +68,7 @@ namespace ntlab
                 for (auto &tb : tempRenderDataBuffer)
                     tb.y = 0;
             };
-            windowOpenGLContext.executeOnGLThread (fillTempBufferYWithZeros);
+            windowOpenGLContext->get().executeOnGLThread (fillTempBufferYWithZeros);
             //{
             //    std::lock_guard<std::mutex> scopedLock (executeInRenderCallbackLock);
             //    executeInRenderCallback.push_back (fillTempBufferYWithZeros);
@@ -90,7 +90,7 @@ namespace ntlab
             lineGLBuffers.add (glBufferLocation);
         };
 
-        windowOpenGLContext.executeOnGLThreadMultipleTimes (addGLBuffer, numLines);
+        windowOpenGLContext->get().executeOnGLThreadMultipleTimes (addGLBuffer, numLines);
 
         lineNames = legend;
         if (lineColours.size() == 0)
@@ -114,7 +114,7 @@ namespace ntlab
 
     void Plot2D::setLineWidthIfPossibleForGPU (const double desiredLineWidth)
     {
-        windowOpenGLContext.executeOnGLThread ([this, desiredLineWidth] (juce::OpenGLContext &openGLContext)
+        windowOpenGLContext->get().executeOnGLThread ([this, desiredLineWidth] (juce::OpenGLContext &openGLContext)
         {
             auto lineWidthRange = getLineWidthRange();
             double usedLineWidth = lineWidthRange.clipValue (desiredLineWidth);
@@ -143,6 +143,8 @@ namespace ntlab
          */
         jassert (updatesAtFramerate == false);
 
+        juce::OpenGLContext& openGLContext = windowOpenGLContext->get().openGLContext;
+
         GLuint lineBuffer = lineGLBuffers[lineIdx];
 
         std::vector<juce::Point<float>> tempRenderDataBufferCopy (tempRenderDataBuffer);
@@ -161,7 +163,7 @@ namespace ntlab
                                                       tempRenderDataBufferCopy.data());
         };
 
-        windowOpenGLContext.executeOnGLThread (updateLineBuffer);
+        windowOpenGLContext->get().executeOnGLThread (updateLineBuffer);
 
         openGLContext.triggerRepaint();
     }
@@ -178,6 +180,8 @@ namespace ntlab
         // Make sure you pass a buffer that matches the number of x values set
         jassert (numDatapointsExpected == yValues.size());
 
+        juce::OpenGLContext& openGLContext = windowOpenGLContext->get().openGLContext;
+
         std::vector<juce::Point<float>> tempRenderDataBufferCopy (tempRenderDataBuffer);
 
         for (int i = 0; i < numDatapointsExpected; ++i)
@@ -192,7 +196,7 @@ namespace ntlab
                                                       tempRenderDataBufferCopy.data());
         };
 
-        windowOpenGLContext.executeOnGLThread (updateLineBuffer);
+        windowOpenGLContext->get().executeOnGLThread (updateLineBuffer);
 
         openGLContext.triggerRepaint();
     }
@@ -283,6 +287,7 @@ namespace ntlab
 
     void Plot2D::newOpenGLContextCreated ()
     {
+        juce::OpenGLContext& openGLContext = windowOpenGLContext->get().openGLContext;
         lineShader.reset (LineShader2D::create (openGLContext));
         openGLContext.extensions.glGenBuffers (1, &gridLineGLBuffer);
     }
@@ -349,7 +354,7 @@ namespace ntlab
             shouldRenderGrid = true;
         };
 
-        windowOpenGLContext.executeOnGLThread (fillGridLineGLBuffer);
+        windowOpenGLContext->get().executeOnGLThread (fillGridLineGLBuffer);
     }
 
     int Plot2D::getNumXGridLines ()
@@ -362,7 +367,10 @@ namespace ntlab
         return numYGridLines;
     }
 
-    void Plot2D::openGLContextClosing () {
+    void Plot2D::openGLContextClosing ()
+    {
+        juce::OpenGLContext& openGLContext = windowOpenGLContext->get().openGLContext;
+
         // delete all buffers
         openGLContext.extensions.glDeleteBuffers (1, &gridLineGLBuffer);
 
@@ -399,24 +407,25 @@ namespace ntlab
             }
         };
 
-        windowOpenGLContext.executeOnGLThread (resizeAllLineGLBuffers);
+        windowOpenGLContext->get().executeOnGLThread (resizeAllLineGLBuffers);
         //executeInRenderCallback.push_back (resizeAllLineGLBuffers);
     }
 
     void Plot2D::setup (bool updateAtFramerate)
     {
+        windowOpenGLContext->get().removeRenderingTarget (this);
         setOpaque (true);
 
-        windowOpenGLContext.addRenderingTarget (this);
+        windowOpenGLContext->get().addRenderingTarget (this);
 
         lineWidthRange = juce::Range<double>::emptyRange (1.0);
 
-        windowOpenGLContext.executeOnGLThread ([this] (juce::OpenGLContext&) { getLineWidthRangePossibleForGPU(); });
+        windowOpenGLContext->get().executeOnGLThread ([this] (juce::OpenGLContext&) { getLineWidthRangePossibleForGPU(); });
 
         updatesAtFramerate = updateAtFramerate;
         if (updateAtFramerate)
         {
-            openGLContext.setContinuousRepainting (true);
+            windowOpenGLContext->get().openGLContext.setContinuousRepainting (true);
         }
 
         xValueRange = { 0.0f, 1.0f};
@@ -425,8 +434,10 @@ namespace ntlab
 
     void Plot2D::renderOpenGL ()
     {
+        juce::OpenGLContext& openGLContext = windowOpenGLContext->get().openGLContext;
+
         // This is the region relative to the GL rendering parent component where our rendering should take place
-        auto clip = windowOpenGLContext.getComponentClippingBoundsRelativeToGLRenderingTarget (this);
+        auto clip = windowOpenGLContext->get().getComponentClippingBoundsRelativeToGLRenderingTarget (this);
         glViewport (clip.getX(), clip.getY(), clip.getWidth(), clip.getHeight());
 
         // enabling the scissor test leads to clearing just the part of the screen where drawing should take place

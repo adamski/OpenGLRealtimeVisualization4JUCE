@@ -233,11 +233,12 @@ namespace ntlab
         void renderOpenGL() override;
         void openGLContextClosing() override;
 
+        void setOpenGLContextWrapper (WindowOpenGLContext& context)      { windowOpenGLContext = context; setup (updatesAtFramerate); }
+
     private:
 
         // OpenGL related member variables
-        WindowOpenGLContext&          windowOpenGLContext;
-        juce::OpenGLContext&          openGLContext;
+        std::optional<std::reference_wrapper<WindowOpenGLContext>>         windowOpenGLContext;
         std::unique_ptr<LineShader2D> lineShader;
         GLuint                        gridLineGLBuffer;
         bool                          shouldRenderGrid = false;

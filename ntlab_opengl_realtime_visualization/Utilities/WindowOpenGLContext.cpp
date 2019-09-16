@@ -64,13 +64,13 @@ namespace ntlab
 
     void WindowOpenGLContext::removeRenderingTarget (juce::OpenGLRenderer* targetToRemove)
     {
-        // if you hit this assertion you are trying to remove a target that is not managed by the WindowOpenGLContext
-        jassert (renderingTargets.contains (targetToRemove));
+        if (renderingTargets.contains (targetToRemove))
+        {
+            executeOnGLThread ([targetToRemove] (juce::OpenGLContext &) { targetToRemove->openGLContextClosing (); });
 
-        executeOnGLThread ([targetToRemove](juce::OpenGLContext&) {targetToRemove->openGLContextClosing(); });
-
-        std::lock_guard<std::mutex> scopedLock (renderingTargetsLock);
-        renderingTargets.removeFirstMatchingValue (targetToRemove);
+            std::lock_guard<std::mutex> scopedLock (renderingTargetsLock);
+            renderingTargets.removeFirstMatchingValue (targetToRemove);
+        }
     }
 
     void WindowOpenGLContext::executeOnGLThread (std::function<void (juce::OpenGLContext&)>&& lambdaToExecute)

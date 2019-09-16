@@ -32,6 +32,7 @@ namespace ntlab
     {
     public:
         WindowOpenGLContext();
+        WindowOpenGLContext (const WindowOpenGLContext&) = delete;
 
         ~WindowOpenGLContext();
 
@@ -65,6 +66,6 @@ namespace ntlab
         void renderOpenGL() override;
         void openGLContextClosing() override;
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WindowOpenGLContext)
+        JUCE_LEAK_DETECTOR(WindowOpenGLContext)
     };
 }
