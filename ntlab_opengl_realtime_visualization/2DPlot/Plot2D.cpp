@@ -24,6 +24,7 @@ SOFTWARE.
 
 
 #include "Plot2D.h"
+#define GL_ALIASED_LINE_WIDTH_RANGE       0x846E
 
 namespace ntlab
 {
@@ -76,15 +77,15 @@ namespace ntlab
         }
 
         GLvoid* data =       (updatesAtFramerate) ? NULL           : tempRenderDataBuffer.data();
-        GLenum bufferUsage = (updatesAtFramerate) ? GL_STREAM_DRAW : GL_STATIC_DRAW;
+        GLenum bufferUsage = (updatesAtFramerate) ? juce::MissingOpenGLDefinitions::GL_STREAM_DRAW : juce::MissingOpenGLDefinitions::GL_STATIC_DRAW;
 
         auto addGLBuffer = [this, data, bufferUsage] (juce::OpenGLContext &openGLContext)
         {
             GLuint glBufferLocation;
             openGLContext.extensions.glGenBuffers (1, &glBufferLocation);
-            openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, glBufferLocation);
-            openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER,
-                                                   static_cast<GLsizeiptr> (numDatapointsExpected * sizeof (juce::Point<float>)),
+            openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, glBufferLocation);
+            openGLContext.extensions.glBufferData (juce::GL_ARRAY_BUFFER,
+                                                   static_cast<juce::GLsizeiptr> (numDatapointsExpected * sizeof (juce::Point<float>)),
                                                    data,
                                                    bufferUsage);
             lineGLBuffers.add (glBufferLocation);
@@ -156,10 +157,10 @@ namespace ntlab
 
         auto updateLineBuffer = [tempRenderDataBufferCopy = std::move (tempRenderDataBufferCopy), lineBuffer] (juce::OpenGLContext& openGLContext)
         {
-            openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, lineBuffer);
-            openGLContext.extensions.glBufferSubData (GL_ARRAY_BUFFER,
+            openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, lineBuffer);
+            openGLContext.extensions.glBufferSubData (juce::GL_ARRAY_BUFFER,
                                                       0,
-                                                      static_cast<GLsizeiptr> (tempRenderDataBufferCopy.size() * sizeof (juce::Point<float>)),
+                                                      static_cast<juce::GLsizeiptr> (tempRenderDataBufferCopy.size() * sizeof (juce::Point<float>)),
                                                       tempRenderDataBufferCopy.data());
         };
 
@@ -189,10 +190,10 @@ namespace ntlab
 
         auto updateLineBuffer = [this, tempRenderDataBufferCopy = std::move (tempRenderDataBufferCopy), lineIdx] (juce::OpenGLContext& openGLContext)
         {
-            openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, lineGLBuffers[lineIdx]);
-            openGLContext.extensions.glBufferSubData (GL_ARRAY_BUFFER,
+            openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, lineGLBuffers[lineIdx]);
+            openGLContext.extensions.glBufferSubData (juce::GL_ARRAY_BUFFER,
                                                       0,
-                                                      static_cast<GLsizeiptr> (tempRenderDataBufferCopy.size() * sizeof (juce::Point<float>)),
+                                                      static_cast<juce::GLsizeiptr> (tempRenderDataBufferCopy.size() * sizeof (juce::Point<float>)),
                                                       tempRenderDataBufferCopy.data());
         };
 
@@ -345,11 +346,11 @@ namespace ntlab
             numXGridLines = newNumXGridLines;
             numYGridLines = newNumYGridLines;
 
-            openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, gridLineGLBuffer);
-            openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER,
-                                                   static_cast<GLsizeiptr> (2 * (numXGridLines + numYGridLines) * sizeof (juce::Point<float>)),
+            openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, gridLineGLBuffer);
+            openGLContext.extensions.glBufferData (juce::GL_ARRAY_BUFFER,
+                                                   static_cast<juce::GLsizeiptr> (2 * (numXGridLines + numYGridLines) * sizeof (juce::Point<float>)),
                                                    lineBuffer.data(),
-                                                   GL_STATIC_DRAW);
+                                                   juce::GL_STATIC_DRAW);
 
             shouldRenderGrid = true;
         };
@@ -393,15 +394,15 @@ namespace ntlab
     void Plot2D::resizeLineGLBuffers ()
     {
         GLvoid* data =       (updatesAtFramerate) ? NULL           : tempRenderDataBuffer.data();
-        GLenum bufferUsage = (updatesAtFramerate) ? GL_STREAM_DRAW : GL_STATIC_DRAW;
+        GLenum bufferUsage = (updatesAtFramerate) ? juce::GL_STREAM_DRAW : juce::GL_STATIC_DRAW;
 
         auto resizeAllLineGLBuffers = [this, data, bufferUsage] (juce::OpenGLContext &openGLContext)
         {
             for (auto glBufferLocation : lineGLBuffers)
             {
-                openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, glBufferLocation);
-                openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER,
-                                                       static_cast<GLsizeiptr> (numDatapointsExpected * sizeof (juce::Point<float>)),
+                openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, glBufferLocation);
+                openGLContext.extensions.glBufferData (juce::GL_ARRAY_BUFFER,
+                                                       static_cast<juce::GLsizeiptr> (numDatapointsExpected * sizeof (juce::Point<float>)),
                                                        data,
                                                        bufferUsage);
             }
@@ -413,7 +414,7 @@ namespace ntlab
 
     void Plot2D::setup (bool updateAtFramerate)
     {
-        windowOpenGLContext->get().removeRenderingTarget (this);
+        //windowOpenGLContext->get().removeRenderingTarget (this);
         setOpaque (true);
 
         windowOpenGLContext->get().addRenderingTarget (this);
@@ -436,6 +437,8 @@ namespace ntlab
     {
         juce::OpenGLContext& openGLContext = windowOpenGLContext->get().openGLContext;
 
+        jassert (openGLContext.getCurrentContext()->getTargetComponent() != nullptr);
+
         // This is the region relative to the GL rendering parent component where our rendering should take place
         auto clip = windowOpenGLContext->get().getComponentClippingBoundsRelativeToGLRenderingTarget (this);
         glViewport (clip.getX(), clip.getY(), clip.getWidth(), clip.getHeight());
@@ -455,7 +458,7 @@ namespace ntlab
             //lineShader->setCoordinateSystemMatchingTo2DDrawing();
             lineShader->setCustomScalingAndTranslation (2.0f, -2.0f, -1.0f, 1.0f);
 
-            openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, gridLineGLBuffer);
+            openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, gridLineGLBuffer);
             lineShader->setLineColour (gridLineColour);
             lineShader->enableAttributes (openGLContext);
             glDrawArrays (GL_LINES, 0, static_cast<GLuint> (2 * (numXGridLines + numYGridLines)));
@@ -494,15 +497,15 @@ namespace ntlab
                         ++y;
                     }
 
-                    openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, lineGLBuffers[i]);
-                    openGLContext.extensions.glBufferSubData (GL_ARRAY_BUFFER,
+                    openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, lineGLBuffers[i]);
+                    openGLContext.extensions.glBufferSubData (juce::GL_ARRAY_BUFFER,
                                                               0,
-                                                              static_cast<GLsizeiptr> (numDatapointsExpected * sizeof (juce::Point<float>)),
+                                                              static_cast<juce::GLsizeiptr> (numDatapointsExpected * sizeof (juce::Point<float>)),
                                                               tempRenderDataBuffer.data());
 
                     lineShader->enableAttributes (openGLContext);
                     // seems that the "count" value passes the number of primitives, not vertices??
-                    glDrawArrays (GL_LINE_STRIP, 0, static_cast<GLuint> (numDatapointsExpected - 1));
+                    glDrawArrays (GL_LINE_STRIP, 0, static_cast<GLuint> (numDatapointsExpected - 1)); // Currently crashing here!!
                     lineShader->disableAttributes (openGLContext);
 
                 }
@@ -514,7 +517,7 @@ namespace ntlab
         {
             for (int i = 0; i < numLines; ++i)
             {
-                openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, lineGLBuffers[i]);
+                openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, lineGLBuffers[i]);
                 lineShader->setLineColour (lineColours[i]);
                 lineShader->enableAttributes (openGLContext);
                 glDrawArrays (GL_LINE_STRIP, 0, static_cast<GLuint> (numDatapointsExpected - 1));
@@ -523,8 +526,8 @@ namespace ntlab
         }
         
         // Reset the element buffers so child Components draw correctly
-        openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, 0);
-        openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, 0);
+        openGLContext.extensions.glBindBuffer (juce::GL_ARRAY_BUFFER, 0);
+        openGLContext.extensions.glBindBuffer (juce::GL_ELEMENT_ARRAY_BUFFER, 0);
     }
 
     void Plot2D::enableLegend (bool shouldBeEnabled, LegendPosition legendPosition, bool withBorder, float backgroundTransparency)

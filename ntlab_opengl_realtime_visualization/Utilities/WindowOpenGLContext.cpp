@@ -64,7 +64,7 @@ namespace ntlab
 
     void WindowOpenGLContext::removeRenderingTarget (juce::OpenGLRenderer* targetToRemove)
     {
-        if (renderingTargets.contains (targetToRemove))
+        if (renderingTargets.size() > 0 && targetToRemove != nullptr && renderingTargets.contains (targetToRemove))
         {
             executeOnGLThread ([targetToRemove] (juce::OpenGLContext &) { targetToRemove->openGLContextClosing (); });
 

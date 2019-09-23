@@ -26,12 +26,18 @@ SOFTWARE.
 
 #pragma once
 
-#include <juce_core/juce_core.h>
-#include <juce_gui_basics/juce_gui_basics.h>
-#include <juce_opengl/juce_opengl.h>
+#ifndef JUCE_OPENGL3
+#define JUCE_OPENGL3 1
+#endif
+//#include <juce_core/juce_core.h>
+//#include <juce_gui_basics/juce_gui_basics.h>
+//#include <juce_opengl/juce_opengl.h>
 #include "../Shader/LineShader.h"
 #include "../Utilities/Float2String.h"
 #include "../Utilities/WindowOpenGLContext.h"
+#include <optional>
+
+
 
 namespace ntlab
 {

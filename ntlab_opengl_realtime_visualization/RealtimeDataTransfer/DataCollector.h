@@ -112,7 +112,13 @@ namespace ntlab
             if (readerShouldSwapBlocks)
             {
                 writeBlock.swapWith (readBlock);
-                writeBufferLock.unlock();
+                
+                try {
+                    writeBufferLock.unlock();
+                }
+                catch (const std::exception& e) {
+                    DBG(e.what());
+                }
                 readerShouldSwapBlocks = false;
                 dataBlockReady (sinkIdx);
             }
